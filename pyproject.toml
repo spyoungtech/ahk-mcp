@@ -1,0 +1,15 @@
+[project]
+name = "ahk-mcp"
+version = "0.1.0"
+description = "Model Context Protocol for Windows automation using AutoHotkey"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "ahk>=1.8.4",
+    "ahk-binary>=2025.1.0",
+    "easyocr>=1.7.2",
+    "mcp[cli]>=1.6.0",
+    "mss>=10.0.0",
+    "numpy>=2.2.4",
+    "wmutil>=0.3.0",
+]
