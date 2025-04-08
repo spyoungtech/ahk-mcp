@@ -51,7 +51,6 @@ class WindowInfo(TypedDict):
     y_position: int
     height: int
     width: int
-    text: str
 
 async def window_to_info(win: AsyncWindow) -> WindowInfo:
     pos = await win.get_position()
@@ -65,10 +64,15 @@ async def window_to_info(win: AsyncWindow) -> WindowInfo:
         'y_position': pos.y,
         'height': pos.height,
         'width': pos.width,
-        'text': await win.get_text()
     }
     return win_info
 
+@mcp.tool()
+async def get_window_text(window_id: str, ctx: Context) -> str:
+    """Given a window ID, retrieve the text of the window using the Windows API."""
+    ahk: AsyncAHK = ctx.request_context.lifespan_context.ahk
+    win = AsyncWindow(engine=ahk, ahk_id=window_id)
+    return await win.get_text()
 
 # Access type-safe lifespan context in tools
 @mcp.tool()
@@ -270,12 +274,42 @@ def capture_and_ocr(sct: MSSBase, region: Region) -> str:
     text = ' '.join(results)
     return text
 
+
+def detailed_capture_and_ocr(sct: MSSBase, region: Region) -> list[tuple[list[list[int]], str, float]]:
+    sct_img = sct.grab(region)  # type: ignore[arg-type]
+    image_np = np.array(sct_img)
+    return _reader.readtext(image_np)
+
+
 @mcp.tool()
 def ocr_region(region: Region) -> str:
     """Given a region defining a bounding box (relative to the screen), screen captures the region and performs OCR, returning the text found"""
     with mss() as sct:
         return capture_and_ocr(sct, region)
 
+class OcrDetail(TypedDict):
+    bounding_box: list[list[int | float]]
+    text: str
+    confidence: float
+
+@mcp.tool()
+def detailed_ocr_region(region: Region) -> list[OcrDetail]:
+    """
+    Given a region (relative to the screen), screen captures the region and performs OCR returning the
+    location of the text found as a bounding box (relative to the capture region), the text identified,
+    and a confidence value between 0 and 1. This is useful when you need to know the location of the identified text.
+    """
+    with mss() as sct:
+        result = detailed_capture_and_ocr(sct, region)
+    results = [
+        {
+            'bounding_box': bounding_box,
+            'text': text,
+            'confidence': confidence
+        }
+        for bounding_box, text, confidence in result
+    ]
+    return results
 
 class MonitorInfo(TypedDict):
     name: str
@@ -346,15 +380,6 @@ async def wait_for_window(ctx: Context, title: str = '', text: str = '', exclude
     except TimeoutError:
         return None
 
-@mcp.resource('ahkwindow://{window_id}', name='window')
-async def window_info(window_id: str, ctx: Context) -> WindowInfo:
-    """Given a window ID, return information about the window"""
-    win = AsyncWindow(engine=ctx.request_context.lifespan_context.ahk, ahk_id=window_id)
-    return await window_to_info(win)
-
-@mcp.resource('displaymonitor://{display_id}')
-def monitor_info(display_id: str, ctx: Context):
-    ...
 
 if __name__ == "__main__":
     # Initialize and run the server
