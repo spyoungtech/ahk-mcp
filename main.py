@@ -1,4 +1,3 @@
-# Add lifespan support for startup/shutdown with strong typing
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
@@ -21,14 +20,12 @@ class AppContext:
 @asynccontextmanager
 async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
     """Manage application lifecycle with type-safe context"""
-    # Initialize on startup
     from ahk._async.transport import AsyncDaemonProcessTransport
     ahk = AsyncAHK(version='v1')
     await ahk.get_mouse_position()
     try:
         yield AppContext(ahk=ahk)
     finally:
-        # Cleanup on shutdown
         try:
             ahk._transport: AsyncDaemonProcessTransport
             if ahk._transport._proc is not None:
@@ -38,7 +35,6 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
             pass
 
 
-# Specify dependencies for deployment and development
 mcp = FastMCP("AHK MCP", dependencies=["ahk", "ahk-binary", "mss", "easyocr", "numpy", "wmutil"], lifespan=app_lifespan)
 
 class WindowInfo(TypedDict):
@@ -74,7 +70,6 @@ async def get_window_text(window_id: str, ctx: Context) -> str:
     win = AsyncWindow(engine=ahk, ahk_id=window_id)
     return await win.get_text()
 
-# Access type-safe lifespan context in tools
 @mcp.tool()
 async def get_all_window_info(ctx: Context) -> dict[str, WindowInfo]:
     """Returns information for all (non-hidden) windows, keyed by window ID"""
@@ -382,5 +377,4 @@ async def wait_for_window(ctx: Context, title: str = '', text: str = '', exclude
 
 
 if __name__ == "__main__":
-    # Initialize and run the server
     mcp.run()
