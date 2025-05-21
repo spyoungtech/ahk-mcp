@@ -26,7 +26,8 @@ mcp install main.py
 ```
 
 This project depends on `ahk-binary` to provide the required AutoHotkey executables and the [`ahk`](https://github.com/spyoungtech/ahk) 
-project to interface with AutoHotkey. It uses `mss`, [`easyocr`](https://github.com/JaidedAI/EasyOCR?tab=readme-ov-file#installation), and `numpy`.
+project to interface with AutoHotkey. It uses `mss`, [`easyocr`](https://github.com/JaidedAI/EasyOCR?tab=readme-ov-file#installation), and `numpy` 
+for OCR functionality.
 
 ## Contributing
 
